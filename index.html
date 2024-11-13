@@ -86,36 +86,6 @@
             transform: translateY(-2px);
         }
 
-        #preview {
-            max-width: 100%;
-            margin-top: 1rem;
-            border-radius: 8px;
-            display: none;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        #status {
-            margin-top: 1rem;
-            color: var(--text-color);
-            font-style: italic;
-        }
-
-        .loading-spinner {
-            display: none;
-            width: 40px;
-            height: 40px;
-            margin: 1rem auto;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
         .photo-count {
             font-size: 0.9rem;
             color: var(--text-color);
@@ -153,8 +123,7 @@
             <input type="text" id="tableNumber" placeholder="Table Number (optional)">
         </div>
 
-        <button class="upload-btn" id="takePhoto">Take Photo</button>
-        <div class="loading-spinner" id="spinner"></div>
+        <button class="upload-btn" id="takePhoto">Take Photos</button>
         <p id="status"></p>
         <p class="photo-count" id="photoCount"></p>
         <p class="success-message" id="successMessage">Photo uploaded successfully! 🎉</p>
@@ -169,8 +138,6 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             const takePhotoBtn = document.getElementById('takePhoto');
-            const status = document.getElementById('status');
-            const spinner = document.getElementById('spinner');
             const photoCountElement = document.getElementById('photoCount');
             const successMessage = document.getElementById('successMessage');
 
@@ -178,9 +145,9 @@
             const myWidget = cloudinary.createUploadWidget({
                 cloudName: CLOUD_NAME,
                 uploadPreset: UPLOAD_PRESET,
-                sources: ['camera'],
-                multiple: false,
-                maxFiles: 1,
+                sources: ['camera'], // Prioritizes the camera source
+                multiple: true, // Allows multiple uploads
+                maxFiles: 10, // Set maximum number of files if desired
                 styles: {
                     palette: {
                         window: '#FAF3E0',
@@ -203,8 +170,6 @@
                     const guestName = document.getElementById('guestName').value || 'Anonymous';
                     const tableNumber = document.getElementById('tableNumber').value || 'Unknown';
 
-                    // Update metadata (you can access these details in your Cloudinary dashboard)
-                    const url = result.info.secure_url;
                     photoCount++;
                     photoCountElement.textContent = `You've shared ${photoCount} photo${photoCount === 1 ? '' : 's'}!`;
                     
