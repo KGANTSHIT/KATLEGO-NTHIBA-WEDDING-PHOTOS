@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wedding Photo Upload</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+        .upload-btn {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin: 1rem 0;
+            transition: background 0.3s ease;
+        }
+        .upload-btn:hover {
+            background: #45a049;
+        }
+        #preview {
+            max-width: 100%;
+            margin-top: 1rem;
+            display: none;
+        }
+        #status {
+            margin-top: 1rem;
+            color: #666;
+        }
+        #camera-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Share Your Wedding Photos</h1>
+        <p>Thank you for capturing our special moments!</p>
+        <input type="file" id="camera-input" accept="image/*" capture="environment">
+        <button class="upload-btn" id="takePhoto">Take Photo</button>
+        <img id="preview" alt="Preview">
+        <p id="status"></p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const takePhotoBtn = document.getElementById('takePhoto');
+            const cameraInput = document.getElementById('camera-input');
+            const preview = document.getElementById('preview');
+            const status = document.getElementById('status');
+
+            // Automatically open camera when page loads
+            setTimeout(() => {
+                cameraInput.click();
+            }, 1000);
+
+            takePhotoBtn.addEventListener('click', () => {
+                cameraInput.click();
+            });
+
+            cameraInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    // Show preview
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        preview.src = e.target.result;
+                        preview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+
+                    // Simulate upload
+                    status.textContent = 'Uploading photo...';
+                    setTimeout(() => {
+                        status.textContent = 'Photo uploaded successfully! Take another?';
+                    }, 2000);
+
+                    // Reset input to allow taking another photo
+                    cameraInput.value = '';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
