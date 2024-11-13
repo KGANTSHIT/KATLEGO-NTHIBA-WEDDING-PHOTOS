@@ -3,18 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wedding Photo Upload</title>
+    <title>Wedding Photos</title>
+    <!-- Cloudinary SDK -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cloudinary-core/2.13.0/cloudinary-core-shrinkwrap.min.js"></script>
+    <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
     <style>
+        :root {
+            --primary-color: #D4B098;
+            --secondary-color: #718355;
+            --background-color: #FAF3E0;
+            --text-color: #464646;
+        }
+        
         body {
             margin: 0;
             padding: 20px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Playfair Display', serif;
+            background-color: var(--background-color);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
+            color: var(--text-color);
         }
+
         .container {
             max-width: 600px;
             width: 100%;
@@ -23,13 +35,42 @@
             padding: 2rem;
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
         }
-        h1 {
-            color: #333;
-            margin-bottom: 1.5rem;
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
         }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--secondary-color);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: var(--text-color);
+            margin-bottom: 2rem;
+        }
+
+        .guest-info {
+            margin-bottom: 2rem;
+        }
+
+        input[type="text"] {
+            padding: 12px;
+            border: 2px solid var(--primary-color);
+            border-radius: 6px;
+            width: 80%;
+            max-width: 300px;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
         .upload-btn {
-            background: #4CAF50;
+            background: var(--secondary-color);
             color: white;
             padding: 12px 24px;
             border: none;
@@ -37,71 +78,145 @@
             font-size: 1.1rem;
             cursor: pointer;
             margin: 1rem 0;
-            transition: background 0.3s ease;
+            transition: all 0.3s ease;
         }
+
         .upload-btn:hover {
-            background: #45a049;
+            background: var(--primary-color);
+            transform: translateY(-2px);
         }
+
         #preview {
             max-width: 100%;
             margin-top: 1rem;
+            border-radius: 8px;
             display: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+
         #status {
             margin-top: 1rem;
-            color: #666;
+            color: var(--text-color);
+            font-style: italic;
         }
-        #camera-input {
+
+        .loading-spinner {
+            display: none;
+            width: 40px;
+            height: 40px;
+            margin: 1rem auto;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .photo-count {
+            font-size: 0.9rem;
+            color: var(--text-color);
+            margin-top: 1rem;
+        }
+
+        .success-message {
+            color: var(--secondary-color);
+            font-weight: bold;
+            margin-top: 1rem;
             display: none;
         }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <h1>Share Your Wedding Photos</h1>
-        <p>Thank you for capturing our special moments!</p>
-        <input type="file" id="camera-input" accept="image/*" capture="environment">
+        <div class="header">
+            <h1>Our Wedding Photos</h1>
+            <p>Thank you for capturing our special moments!</p>
+        </div>
+
+        <div class="guest-info">
+            <input type="text" id="guestName" placeholder="Your Name (optional)">
+            <input type="text" id="tableNumber" placeholder="Table Number (optional)">
+        </div>
+
         <button class="upload-btn" id="takePhoto">Take Photo</button>
-        <img id="preview" alt="Preview">
+        <div class="loading-spinner" id="spinner"></div>
         <p id="status"></p>
+        <p class="photo-count" id="photoCount"></p>
+        <p class="success-message" id="successMessage">Photo uploaded successfully! 🎉</p>
     </div>
 
     <script>
+        // Replace with your Cloudinary cloud name
+        const CLOUD_NAME = 'dngvcehwz';
+        const UPLOAD_PRESET = 'wedding_photos'; // We'll create this in Cloudinary
+
+        let photoCount = 0;
+
         document.addEventListener('DOMContentLoaded', () => {
             const takePhotoBtn = document.getElementById('takePhoto');
-            const cameraInput = document.getElementById('camera-input');
-            const preview = document.getElementById('preview');
             const status = document.getElementById('status');
+            const spinner = document.getElementById('spinner');
+            const photoCountElement = document.getElementById('photoCount');
+            const successMessage = document.getElementById('successMessage');
 
-            // Automatically open camera when page loads
-            setTimeout(() => {
-                cameraInput.click();
-            }, 1000);
+            // Initialize Cloudinary Upload Widget
+            const myWidget = cloudinary.createUploadWidget({
+                cloudName: CLOUD_NAME,
+                uploadPreset: UPLOAD_PRESET,
+                sources: ['camera'],
+                multiple: false,
+                maxFiles: 1,
+                styles: {
+                    palette: {
+                        window: '#FAF3E0',
+                        windowBorder: '#D4B098',
+                        tabIcon: '#718355',
+                        menuIcons: '#718355',
+                        textDark: '#464646',
+                        textLight: '#FFFFFF',
+                        link: '#718355',
+                        action: '#718355',
+                        inactiveTabIcon: '#D4B098',
+                        error: '#c43737',
+                        inProgress: '#718355',
+                        complete: '#20B832',
+                        sourceBg: '#FFFFFF'
+                    }
+                }
+            }, (error, result) => {
+                if (!error && result && result.event === "success") {
+                    const guestName = document.getElementById('guestName').value || 'Anonymous';
+                    const tableNumber = document.getElementById('tableNumber').value || 'Unknown';
 
-            takePhotoBtn.addEventListener('click', () => {
-                cameraInput.click();
+                    // Update metadata (you can access these details in your Cloudinary dashboard)
+                    const url = result.info.secure_url;
+                    photoCount++;
+                    photoCountElement.textContent = `You've shared ${photoCount} photo${photoCount === 1 ? '' : 's'}!`;
+                    
+                    successMessage.style.display = 'block';
+                    setTimeout(() => {
+                        successMessage.style.display = 'none';
+                    }, 3000);
+                }
             });
 
-            cameraInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    // Show preview
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        preview.src = e.target.result;
-                        preview.style.display = 'block';
-                    };
-                    reader.readAsDataURL(file);
-
-                    // Simulate upload
-                    status.textContent = 'Uploading photo...';
-                    setTimeout(() => {
-                        status.textContent = 'Photo uploaded successfully! Take another?';
-                    }, 2000);
-
-                    // Reset input to allow taking another photo
-                    cameraInput.value = '';
-                }
+            takePhotoBtn.addEventListener('click', () => {
+                myWidget.open();
             });
         });
     </script>
