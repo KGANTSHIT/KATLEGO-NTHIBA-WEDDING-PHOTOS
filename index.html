@@ -171,4 +171,52 @@
             const tabs = document.querySelectorAll('.tab');
             const tabContents = document.querySelectorAll('.tab-content');
             const guestGallery = document.getElementById('guestGallery');
-         
+            const photographerGallery = document.getElementById('photographerGallery');
+            const passwordInput = document.getElementById('passwordInput');
+            const passwordSubmit = document.getElementById('passwordSubmit');
+
+            // Tab Switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.tab).classList.add('active');
+                });
+            });
+
+            // Guest Upload
+            document.getElementById('uploadGuestPhotos').addEventListener('click', () => {
+                const client = filestack.init(API_KEY);
+                client.picker({
+                    onUploadDone: (result) => {
+                        result.filesUploaded.forEach(file => {
+                            const img = document.createElement('img');
+                            img.src = file.url;
+                            guestGallery.appendChild(img);
+                        });
+                    }
+                }).open();
+            });
+
+            // Photographer Upload
+            passwordSubmit.addEventListener('click', () => {
+                if (passwordInput.value === PASSWORD) {
+                    const client = filestack.init(API_KEY);
+                    client.picker({
+                        onUploadDone: (result) => {
+                            result.filesUploaded.forEach(file => {
+                                const img = document.createElement('img');
+                                img.src = file.url;
+                                photographerGallery.appendChild(img);
+                            });
+                        });
+                    }).open();
+                } else {
+                    alert('Incorrect password');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
