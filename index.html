@@ -4,133 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wedding Photos Gallery</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cloudinary-core/2.13.0/cloudinary-core-shrinkwrap.min.js"></script>
-    <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
     <script src="https://static.filestackapi.com/v3/filestack.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5ebe0; /* Nude background */
-            margin: 0;
-            padding: 0;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 20px;
-            background: #fff8f0; /* Light nude shade */
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #704f4f; /* Warm brown text */
-        }
-
-        .tabs {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 20px;
-            background: #f4d7c3; /* Nude tone for tabs */
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .tab {
-            flex: 1;
-            padding: 10px;
-            text-align: center;
-            cursor: pointer;
-            background: #f4d7c3;
-            color: #704f4f;
-            font-weight: bold;
-            border-right: 1px solid #e4c3b4;
-            transition: background 0.3s;
-        }
-
-        .tab:last-child {
-            border-right: none;
-        }
-
-        .tab:hover {
-            background: #e4c3b4; /* Slightly darker nude */
-        }
-
-        .tab.active {
-            background: #fff8f0; /* Match container background */
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .photo-gallery {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .photo-item {
-            margin: 10px;
-        }
-
-        .photo-item img {
-            max-width: 200px;
-            border-radius: 8px;
-            border: 2px solid #f4d7c3; /* Nude border */
-        }
-
-        .upload-section {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .upload-btn {
-            padding: 10px 20px;
-            background: #d4a692; /* Warm nude button */
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 1rem;
-            cursor: pointer;
-        }
-
-        .upload-btn:hover {
-            background: #b5846e; /* Darker nude */
-        }
-
-        .password-protected {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .password-protected input {
-            margin: 10px;
-            padding: 8px;
-            border: 1px solid #e4c3b4; /* Nude border */
-            border-radius: 4px;
-            background: #fff8f0;
-        }
-
-        .password-protected button {
-            padding: 8px 12px;
-            background: #d4a692;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .password-protected button:hover {
-            background: #b5846e;
-        }
+        /* Keep your existing styles here */
     </style>
 </head>
 <body>
@@ -161,17 +37,14 @@
             <div class="password-protected" id="photographerUpload">
                 <input type="password" id="passwordInput" placeholder="Enter password">
                 <button id="passwordSubmit">Submit</button>
-                <button id="uploadPhotographerPhotos" style="display:none;">Upload Photos</button>
             </div>
         </div>
     </div>
 
     <script>
-        const CLOUD_NAME = 'dngvcehwz';
-        const GUEST_UPLOAD_PRESET = 'wedding_guest_photos';
-        const PHOTOGRAPHER_UPLOAD_PRESET = 'wedding_photographer_photos';
+        const FILSTACK_API_KEY = 'AixfKOtV5RjWSbEiAvouVz';  // Filestack API key
+
         const PASSWORD = '190528';
-        const FILSTACK_API_KEY = 'AixfKOtV5RjWSbEiAvouVz'; // Filestack API key
 
         document.addEventListener('DOMContentLoaded', () => {
             const tabs = document.querySelectorAll('.tab');
@@ -181,7 +54,6 @@
             const passwordProtected = document.getElementById('photographerUpload');
             const passwordInput = document.getElementById('passwordInput');
             const passwordSubmit = document.getElementById('passwordSubmit');
-            const uploadPhotographerPhotos = document.getElementById('uploadPhotographerPhotos');
 
             // Tab Switching
             tabs.forEach(tab => {
@@ -193,38 +65,33 @@
                 });
             });
 
-            // Guest Upload via Cloudinary
+            // Guest Upload using Filestack
             document.getElementById('uploadGuestPhotos').addEventListener('click', () => {
-                const guestWidget = cloudinary.createUploadWidget({
-                    cloudName: CLOUD_NAME,
-                    uploadPreset: GUEST_UPLOAD_PRESET,
-                }, (error, result) => {
-                    if (!error && result && result.event === 'success') {
-                        const photoUrl = result.info.secure_url;
+                const guestPicker = filestack.init(FILSTACK_API_KEY);
+                guestPicker.picker({
+                    accept: 'image/*',  // Allow only images
+                    onFileUploadFinished: (file) => {
+                        const photoUrl = file.url;
                         const img = document.createElement('img');
                         img.src = photoUrl;
                         guestGallery.appendChild(img);
                     }
-                });
-                guestWidget.open();
+                }).open();
             });
 
-            // Photographer Upload via Filestack (after password authentication)
+            // Photographer Upload using Filestack and Password
             passwordSubmit.addEventListener('click', () => {
                 if (passwordInput.value === PASSWORD) {
-                    uploadPhotographerPhotos.style.display = 'inline-block'; // Show upload button
-                    uploadPhotographerPhotos.addEventListener('click', function() {
-                        const client = filestack.init(FILSTACK_API_KEY);
-                        client.picker({
-                            maxFileSize: 50 * 1024 * 1024, // 50 MB max file size
-                            onUploadDone: function(result) {
-                                const photoUrl = result.filesUploaded[0].url;
-                                const img = document.createElement('img');
-                                img.src = photoUrl;
-                                photographerGallery.appendChild(img);
-                            }
-                        }).open();
-                    });
+                    const photographerPicker = filestack.init(FILSTACK_API_KEY);
+                    photographerPicker.picker({
+                        accept: 'image/*',  // Allow only images
+                        onFileUploadFinished: (file) => {
+                            const photoUrl = file.url;
+                            const img = document.createElement('img');
+                            img.src = photoUrl;
+                            photographerGallery.appendChild(img);
+                        }
+                    }).open();
                 } else {
                     alert('Incorrect password');
                 }
