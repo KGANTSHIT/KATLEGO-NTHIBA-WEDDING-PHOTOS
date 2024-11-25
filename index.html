@@ -6,6 +6,7 @@
     <title>Wedding Photos Gallery</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cloudinary-core/2.13.0/cloudinary-core-shrinkwrap.min.js"></script>
     <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
+    <script src="https://static.filestackapi.com/v3/filestack.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -160,6 +161,7 @@
             <div class="password-protected" id="photographerUpload">
                 <input type="password" id="passwordInput" placeholder="Enter password">
                 <button id="passwordSubmit">Submit</button>
+                <button id="uploadPhotographerPhotos" style="display:none;">Upload Photos</button>
             </div>
         </div>
     </div>
@@ -169,6 +171,7 @@
         const GUEST_UPLOAD_PRESET = 'wedding_guest_photos';
         const PHOTOGRAPHER_UPLOAD_PRESET = 'wedding_photographer_photos';
         const PASSWORD = '190528';
+        const FILSTACK_API_KEY = 'AixfKOtV5RjWSbEiAvouVz'; // Filestack API key
 
         document.addEventListener('DOMContentLoaded', () => {
             const tabs = document.querySelectorAll('.tab');
@@ -178,6 +181,7 @@
             const passwordProtected = document.getElementById('photographerUpload');
             const passwordInput = document.getElementById('passwordInput');
             const passwordSubmit = document.getElementById('passwordSubmit');
+            const uploadPhotographerPhotos = document.getElementById('uploadPhotographerPhotos');
 
             // Tab Switching
             tabs.forEach(tab => {
@@ -189,7 +193,7 @@
                 });
             });
 
-            // Guest Upload
+            // Guest Upload via Cloudinary
             document.getElementById('uploadGuestPhotos').addEventListener('click', () => {
                 const guestWidget = cloudinary.createUploadWidget({
                     cloudName: CLOUD_NAME,
@@ -205,21 +209,22 @@
                 guestWidget.open();
             });
 
-            // Photographer Upload
+            // Photographer Upload via Filestack (after password authentication)
             passwordSubmit.addEventListener('click', () => {
                 if (passwordInput.value === PASSWORD) {
-                    const photographerWidget = cloudinary.createUploadWidget({
-                        cloudName: CLOUD_NAME,
-                        uploadPreset: PHOTOGRAPHER_UPLOAD_PRESET,
-                    }, (error, result) => {
-                        if (!error && result && result.event === 'success') {
-                            const photoUrl = result.info.secure_url;
-                            const img = document.createElement('img');
-                            img.src = photoUrl;
-                            photographerGallery.appendChild(img);
-                        }
+                    uploadPhotographerPhotos.style.display = 'inline-block'; // Show upload button
+                    uploadPhotographerPhotos.addEventListener('click', function() {
+                        const client = filestack.init(FILSTACK_API_KEY);
+                        client.picker({
+                            maxFileSize: 50 * 1024 * 1024, // 50 MB max file size
+                            onUploadDone: function(result) {
+                                const photoUrl = result.filesUploaded[0].url;
+                                const img = document.createElement('img');
+                                img.src = photoUrl;
+                                photographerGallery.appendChild(img);
+                            }
+                        }).open();
                     });
-                    photographerWidget.open();
                 } else {
                     alert('Incorrect password');
                 }
