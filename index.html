@@ -4,9 +4,131 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wedding Photos Gallery</title>
-    <script src="https://static.filestackapi.com/v3/filestack.js"></script>
+    <script src="https://static.filestackapi.com/filestack.js"></script>
     <style>
-        /* Keep your existing styles here */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5ebe0; /* Nude background */
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #fff8f0; /* Light nude shade */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #704f4f; /* Warm brown text */
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            background: #f4d7c3; /* Nude tone for tabs */
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            background: #f4d7c3;
+            color: #704f4f;
+            font-weight: bold;
+            border-right: 1px solid #e4c3b4;
+            transition: background 0.3s;
+        }
+
+        .tab:last-child {
+            border-right: none;
+        }
+
+        .tab:hover {
+            background: #e4c3b4; /* Slightly darker nude */
+        }
+
+        .tab.active {
+            background: #fff8f0; /* Match container background */
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .photo-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .photo-item {
+            margin: 10px;
+        }
+
+        .photo-item img {
+            max-width: 200px;
+            border-radius: 8px;
+            border: 2px solid #f4d7c3; /* Nude border */
+        }
+
+        .upload-section {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .upload-btn {
+            padding: 10px 20px;
+            background: #d4a692; /* Warm nude button */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .upload-btn:hover {
+            background: #b5846e; /* Darker nude */
+        }
+
+        .password-protected {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .password-protected input {
+            margin: 10px;
+            padding: 8px;
+            border: 1px solid #e4c3b4; /* Nude border */
+            border-radius: 4px;
+            background: #fff8f0;
+        }
+
+        .password-protected button {
+            padding: 8px 12px;
+            background: #d4a692;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .password-protected button:hover {
+            background: #b5846e;
+        }
     </style>
 </head>
 <body>
@@ -42,61 +164,11 @@
     </div>
 
     <script>
-        const FILSTACK_API_KEY = 'AixfKOtV5RjWSbEiAvouVz';  // Filestack API key
-
+        const API_KEY = 'AixfKOtV5RjWSbEiAvouVz';
         const PASSWORD = '190528';
 
         document.addEventListener('DOMContentLoaded', () => {
             const tabs = document.querySelectorAll('.tab');
             const tabContents = document.querySelectorAll('.tab-content');
             const guestGallery = document.getElementById('guestGallery');
-            const photographerGallery = document.getElementById('photographerGallery');
-            const passwordProtected = document.getElementById('photographerUpload');
-            const passwordInput = document.getElementById('passwordInput');
-            const passwordSubmit = document.getElementById('passwordSubmit');
-
-            // Tab Switching
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tabContents.forEach(content => content.classList.remove('active'));
-                    tab.classList.add('active');
-                    document.getElementById(tab.dataset.tab).classList.add('active');
-                });
-            });
-
-            // Guest Upload using Filestack
-            document.getElementById('uploadGuestPhotos').addEventListener('click', () => {
-                const guestPicker = filestack.init(FILSTACK_API_KEY);
-                guestPicker.picker({
-                    accept: 'image/*',  // Allow only images
-                    onFileUploadFinished: (file) => {
-                        const photoUrl = file.url;
-                        const img = document.createElement('img');
-                        img.src = photoUrl;
-                        guestGallery.appendChild(img);
-                    }
-                }).open();
-            });
-
-            // Photographer Upload using Filestack and Password
-            passwordSubmit.addEventListener('click', () => {
-                if (passwordInput.value === PASSWORD) {
-                    const photographerPicker = filestack.init(FILSTACK_API_KEY);
-                    photographerPicker.picker({
-                        accept: 'image/*',  // Allow only images
-                        onFileUploadFinished: (file) => {
-                            const photoUrl = file.url;
-                            const img = document.createElement('img');
-                            img.src = photoUrl;
-                            photographerGallery.appendChild(img);
-                        }
-                    }).open();
-                } else {
-                    alert('Incorrect password');
-                }
-            });
-        });
-    </script>
-</body>
-</html>
+         
