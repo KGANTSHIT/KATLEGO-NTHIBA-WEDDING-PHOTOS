@@ -3,13 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wedding Photos Upload</title>
+    <title>Wedding Photos Gallery</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cloudinary-core/2.13.0/cloudinary-core-shrinkwrap.min.js"></script>
     <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
     <style>
-        /* Styling omitted for brevity; same as before */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            background: #f9f9f9;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .tab.active {
+            background: #fff;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
         .photo-gallery {
-            margin-top: 20px;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
@@ -17,49 +64,87 @@
 
         .photo-item {
             margin: 10px;
-            text-align: center;
         }
 
         .photo-item img {
-            max-width: 150px;
+            max-width: 200px;
             border-radius: 8px;
-            margin-bottom: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        .download-btn {
-            background: var(--secondary-color);
+        .upload-section {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .upload-btn {
+            padding: 10px 20px;
+            background: #5cb85c;
             color: white;
-            padding: 6px 12px;
             border: none;
             border-radius: 4px;
-            font-size: 0.9rem;
+            font-size: 1rem;
             cursor: pointer;
         }
 
-        .download-btn:hover {
-            background: var(--primary-color);
-            transform: translateY(-1px);
+        .upload-btn:hover {
+            background: #4cae4c;
+        }
+
+        .password-protected {
+            display: none;
+            text-align: center;
+        }
+
+        .password-protected input {
+            margin: 10px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .password-protected button {
+            padding: 8px 12px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .password-protected button:hover {
+            background: #0056b3;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Wedding Photos Upload</h1>
-            <p>Upload your favorite memories!</p>
+            <h1>Wedding Photos Gallery</h1>
+            <p>Relive the memories of our special day!</p>
         </div>
 
-        <div class="upload-section">
-            <button class="upload-btn" id="uploadGuestPhotos">Upload Guest Photos</button>
-            <button class="upload-btn" id="uploadPhotographerPhotos">Upload Photographer Photos</button>
-            <div id="status"></div>
-            <p id="photoCount"></p>
-            <div class="loading-spinner" id="spinner"></div>
+        <div class="tabs">
+            <div class="tab active" data-tab="guests">Photos by Guests</div>
+            <div class="tab" data-tab="photographer">Photographer</div>
         </div>
 
-        <div class="photo-gallery" id="photoGallery">
-            <!-- Uploaded photos will appear here -->
+        <div class="tab-content active" id="guests">
+            <div class="photo-gallery" id="guestGallery">
+                <!-- Guest photos will load here -->
+            </div>
+            <div class="upload-section">
+                <button class="upload-btn" id="uploadGuestPhotos">Upload Photos</button>
+            </div>
+        </div>
+
+        <div class="tab-content" id="photographer">
+            <div class="photo-gallery" id="photographerGallery">
+                <!-- Photographer photos will load here -->
+            </div>
+            <div class="password-protected" id="photographerUpload">
+                <input type="password" id="passwordInput" placeholder="Enter password">
+                <button id="passwordSubmit">Submit</button>
+            </div>
         </div>
     </div>
 
@@ -67,91 +152,63 @@
         const CLOUD_NAME = 'dngvcehwz';
         const GUEST_UPLOAD_PRESET = 'wedding_guest_photos';
         const PHOTOGRAPHER_UPLOAD_PRESET = 'wedding_photographer_photos';
+        const PASSWORD = 'secureAccess123';
 
-        let guestPhotoCount = 0;
-        let photographerPhotoCount = 0;
+        let activeTab = 'guests';
 
         document.addEventListener('DOMContentLoaded', () => {
-            const guestUploadBtn = document.getElementById('uploadGuestPhotos');
-            const photographerUploadBtn = document.getElementById('uploadPhotographerPhotos');
-            const status = document.getElementById('status');
-            const photoCountElement = document.getElementById('photoCount');
-            const photoGallery = document.getElementById('photoGallery');
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const guestGallery = document.getElementById('guestGallery');
+            const photographerGallery = document.getElementById('photographerGallery');
+            const passwordProtected = document.getElementById('photographerUpload');
+            const passwordInput = document.getElementById('passwordInput');
+            const passwordSubmit = document.getElementById('passwordSubmit');
 
-            function createUploadWidget(uploadPreset, photoCounterCallback) {
-                return cloudinary.createUploadWidget({
+            function switchTab(tabName) {
+                tabs.forEach(tab => tab.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+                document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+                document.getElementById(tabName).classList.add('active');
+                activeTab = tabName;
+            }
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+            });
+
+            document.getElementById('uploadGuestPhotos').addEventListener('click', () => {
+                const guestWidget = cloudinary.createUploadWidget({
                     cloudName: CLOUD_NAME,
-                    uploadPreset: uploadPreset,
-                    maxFileSize: 20 * 1024 * 1024, // Allow files up to 20MB
-                    sources: ['local', 'camera'],
-                    multiple: true,
-                    styles: {
-                        palette: {
-                            window: '#FAF3E0',
-                            windowBorder: '#D4B098',
-                            tabIcon: '#718355',
-                            menuIcons: '#718355',
-                            textDark: '#464646',
-                            textLight: '#FFFFFF',
-                            link: '#718355',
-                            action: '#718355',
-                            inactiveTabIcon: '#D4B098',
-                            error: '#c43737',
-                            inProgress: '#718355',
-                            complete: '#20B832',
-                            sourceBg: '#FFFFFF'
-                        }
-                    }
+                    uploadPreset: GUEST_UPLOAD_PRESET,
                 }, (error, result) => {
-                    if (!error && result && result.event === "success") {
-                        const url = result.info.secure_url;
-                        photoCounterCallback();
-                        addPhotoToGallery(url);
-                        status.textContent = `Uploaded: ${url}`;
-                    } else if (error) {
-                        status.textContent = `Error: ${error.message}`;
+                    if (!error && result && result.event === 'success') {
+                        const photoUrl = result.info.secure_url;
+                        const img = document.createElement('img');
+                        img.src = photoUrl;
+                        guestGallery.appendChild(img);
                     }
                 });
-            }
-
-            function addPhotoToGallery(photoUrl) {
-                const photoItem = document.createElement('div');
-                photoItem.className = 'photo-item';
-
-                const img = document.createElement('img');
-                img.src = photoUrl;
-
-                const downloadBtn = document.createElement('button');
-                downloadBtn.className = 'download-btn';
-                downloadBtn.textContent = 'Download';
-                downloadBtn.addEventListener('click', () => {
-                    const a = document.createElement('a');
-                    a.href = photoUrl;
-                    a.download = 'wedding_photo.jpg'; // You can customize this
-                    a.click();
-                });
-
-                photoItem.appendChild(img);
-                photoItem.appendChild(downloadBtn);
-                photoGallery.appendChild(photoItem);
-            }
-
-            const guestWidget = createUploadWidget(GUEST_UPLOAD_PRESET, () => {
-                guestPhotoCount++;
-                photoCountElement.textContent = `Guest photos uploaded: ${guestPhotoCount}`;
-            });
-
-            const photographerWidget = createUploadWidget(PHOTOGRAPHER_UPLOAD_PRESET, () => {
-                photographerPhotoCount++;
-                photoCountElement.textContent = `Photographer photos uploaded: ${photographerPhotoCount}`;
-            });
-
-            guestUploadBtn.addEventListener('click', () => {
                 guestWidget.open();
             });
 
-            photographerUploadBtn.addEventListener('click', () => {
-                photographerWidget.open();
+            passwordSubmit.addEventListener('click', () => {
+                if (passwordInput.value === PASSWORD) {
+                    const photographerWidget = cloudinary.createUploadWidget({
+                        cloudName: CLOUD_NAME,
+                        uploadPreset: PHOTOGRAPHER_UPLOAD_PRESET,
+                    }, (error, result) => {
+                        if (!error && result && result.event === 'success') {
+                            const photoUrl = result.info.secure_url;
+                            const img = document.createElement('img');
+                            img.src = photoUrl;
+                            photographerGallery.appendChild(img);
+                        }
+                    });
+                    photographerWidget.open();
+                } else {
+                    alert('Incorrect password');
+                }
             });
         });
     </script>
